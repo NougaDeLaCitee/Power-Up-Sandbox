@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sandbox Simulation - Game Boosts</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Outfit', sans-serif; }
+        .glow-red { text-shadow: 0 0 10px rgba(239, 68, 68, 0.7); }
+        .glow-blue { text-shadow: 0 0 10px rgba(59, 130, 246, 0.7); }
+        .glow-cyan { text-shadow: 0 0 10px rgba(6, 182, 212, 0.7); }
+        .glow-orange { text-shadow: 0 0 10px rgba(249, 115, 22, 0.7); }
+        .glow-yellow { text-shadow: 0 0 10px rgba(234, 179, 8, 0.7); }
+        .floating { animation: float 3s ease-in-out infinite; }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col overflow-x-hidden">
+
+    <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                    <i class="fa-solid fa-gamepad text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">Nexus Boost Sandbox</h1>
+                    <p class="text-xs text-slate-400">Simulateur interactif de boosts RPG</p>
+                </div>
+            </div>
+
+            <!-- Live Stats Bars -->
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 w-full md:w-auto">
+                <!-- Health -->
+                <div class="bg-slate-800/80 border border-red-500/30 rounded-xl p-2 px-3 flex flex-col justify-center">
+                    <div class="flex justify-between text-xs font-bold text-red-400 mb-1">
+                        <span><i class="fa-solid fa-heart mr-1"></i> Santé</span>
+                        <span id="stat-hp">100/100</span>
+                    </div>
+                    <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
+                        <div id="bar-hp" class="bg-red-500 h-full transition-all duration-300" style="width: 100%"></div>
+                    </div>
+                </div>
+                <!-- Mana -->
+                <div class="bg-slate-800/80 border border-blue-500/30 rounded-xl p-2 px-3 flex flex-col justify-center">
+                    <div class="flex justify-between text-xs font-bold text-blue-400 mb-1">
+                        <span><i class="fa-solid fa-moon mr-1"></i> Mana</span>
+                        <span id="stat-mana">100/100</span>
+                    </div>
+                    <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
+                        <div id="bar-mana" class="bg-blue-500 h-full transition-all duration-300" style="width: 100%"></div>
+                    </div>
+                </div>
+                <!-- Speed -->
+                <div class="bg-slate-800/80 border border-cyan-500/30 rounded-xl p-2 px-3 flex flex-col justify-center">
+                    <div class="flex justify-between text-xs font-bold text-cyan-400 mb-1">
+                        <span><i class="fa-solid fa-bolt mr-1"></i> Vitesse</span>
+                        <span id="stat-speed">1.0x</span>
+                    </div>
+                    <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
+                        <div id="bar-speed" class="bg-cyan-500 h-full transition-all duration-300" style="width: 20%"></div>
+                    </div>
+                </div>
+                <!-- Damage -->
+                <div class="bg-slate-800/80 border border-orange-500/30 rounded-xl p-2 px-3 flex flex-col justify-center">
+                    <div class="flex justify-between text-xs font-bold text-orange-400 mb-1">
+                        <span><i class="fa-solid fa-sword mr-1"></i> Dégâts</span>
+                        <span id="stat-dmg">25</span>
+                    </div>
+                    <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
+                        <div id="bar-dmg" class="bg-orange-500 h-full transition-all duration-300" style="width: 25%"></div>
+                    </div>
+                </div>
+                <!-- Shield -->
+                <div class="bg-slate-800/80 border border-yellow-500/30 rounded-xl p-2 px-3 flex flex-col justify-center col-span-2 sm:col-span-1">
+                    <div class="flex justify-between text-xs font-bold text-yellow-400 mb-1">
+                        <span><i class="fa-solid fa-shield mr-1"></i> Bouclier</span>
+                        <span id="stat-shield">0/50</span>
+                    </div>
+                    <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
+                        <div id="bar-shield" class="bg-yellow-500 h-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto w-full p-4 flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 my-4">
+        
+        <!-- Left Sidebar: Boost Controls & Inventory -->
+        <div class="lg:col-span-1 flex flex-col gap-4">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl">
+                <h2 class="text-sm font-bold tracking-wider text-purple-400 uppercase mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-flask"></i> Panneau des Boosts
+                </h2>
+                <p class="text-xs text-slate-400 mb-4">Cliquez pour activer, combiner ou réinitialiser vos boosts de jeu.</p>
+                
+                <div class="flex flex-col gap-2.5">
+                    <!-- Health Boost Button -->
+                    <button onclick="activateBoost('health')" class="group relative flex items-center justify-between p-3 rounded-xl bg-red-950/40 border border-red-500/30 hover:bg-red-900/50 transition-all text-left">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-heart"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-bold text-red-200">Health Boost</h3>
+                                <p class="text-[10px] text-red-400/80">+50 PV max & Soin complet</p>
+                            </div>
+                        </div>
+                        <span id="count-health" class="text-xs font-mono bg-red-500/20 text-red-300 px-2 py-0.5 rounded-md">0</span>
+                    </button>
+
+                    <!-- Mana Boost Button -->
+                    <button onclick="activateBoost('mana')" class="group relative flex items-center justify-between p-3 rounded-xl bg-blue-950/40 border border-blue-500/30 hover:bg-blue-900/50 transition-all text-left">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-moon"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-bold text-blue-200">Mana Boost</h3>
+                                <p class="text-[10px] text-blue-400/80">Régénération magique accrue</p>
+                            </div>
+                        </div>
+                        <span id="count-mana" class="text-xs font-mono bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-md">0</span>
+                    </button>
+
+                    <!-- Speed Boost Button -->
+                    <button onclick="activateBoost('speed')" class="group relative flex items-center justify-between p-3 rounded-xl bg-cyan-950/40 border border-cyan-500/30 hover:bg-cyan-900/50 transition-all text-left">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-bolt"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-bold text-cyan-200">Speed Boost</h3>
+                                <p class="text-[10px] text-cyan-400/80">+0.5x vitesse de déplacement</p>
+                            </div>
+                        </div>
+                        <span id="count-speed" class="text-xs font-mono bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-md">0</span>
+                    </button>
+
+                    <!-- Damage Boost Button -->
+                    <button onclick="activateBoost('damage')" class="group relative flex items-center justify-between p-3 rounded-xl bg-orange-950/40 border border-orange-500/30 hover:bg-orange-900/50 transition-all text-left">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-sword"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-bold text-orange-200">Damage Boost</h3>
+                                <p class="text-[10px] text-orange-400/80">+20 puissance d'attaque</p>
+                            </div>
+                        </div>
+                        <span id="count-damage" class="text-xs font-mono bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded-md">0</span>
+                    </button>
+
+                    <!-- Shield Boost Button -->
+                    <button onclick="activateBoost('shield')" class="group relative flex items-center justify-between p-3 rounded-xl bg-yellow-950/40 border border-yellow-500/30 hover:bg-yellow-900/50 transition-all text-left">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-lg bg-yellow-500/20 text-yellow-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-shield"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-bold text-yellow-200">Shield Boost</h3>
+                                <p class="text-[10px] text-yellow-400/80">+50 points de bouclier d'énergie</p>
+                            </div>
+                        </div>
+                        <span id="count-shield" class="text-xs font-mono bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded-md">0</span>
+                    </button>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-slate-800 flex gap-2">
+                    <button onclick="spawnRandomBoost()" class="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-3 rounded-xl text-xs transition-colors shadow-lg shadow-purple-600/30">
+                        <i class="fa-solid fa-gift mr-1"></i> Pop Boost
+                    </button>
+                    <button onclick="resetSandbox()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 px-3 rounded-xl text-xs transition-colors">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Simulation Rules & Combo Info -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex-1">
+                <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider mb-2">
+                    <i class="fa-solid fa-info-circle"></i> État des Synergies
+                </h3>
+                <div id="combo-display" class="text-xs text-slate-300 bg-slate-950 p-3 rounded-xl border border-slate-800/80 min-h-[90px] flex items-center justify-center text-center italic">
+                    Aucun combo spécial actif. Cumulez vitesse, dégâts et bouclier pour déclencher une synergie divine !
+                </div>
+            </div>
+        </div>
+
+        <!-- Center: Interactive Arena / Sandbox Simulation Area -->
+        <div class="lg:col-span-2 flex flex-col gap-4">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col h-[520px] relative overflow-hidden">
+                <div class="flex items-center justify-between mb-3 z-10">
+                    <h2 class="text-sm font-bold tracking-wider text-purple-400 uppercase flex items-center gap-2">
+                        <i class="fa-solid fa-crosshairs"></i> Arène de Test & Simulation
+                    </h2>
+                    <div class="flex gap-2">
+                        <button onclick="spawnEnemy()" class="bg-red-600/30 border border-red-500/50 hover:bg-red-600/50 text-red-200 px-3 py-1 rounded-lg text-xs font-semibold transition-all">
+                            <i class="fa-solid fa-skull mr-1"></i> Invoquer Cible
+                        </button>
+                        <button onclick="triggerSuperAttack()" class="bg-amber-600/30 border border-amber-500/50 hover:bg-amber-600/50 text-amber-200 px-3 py-1 rounded-lg text-xs font-semibold transition-all">
+                            <i class="fa-solid fa-fire mr-1"></i> Explosion Mana
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sandbox Canvas / Interactive Grid Area -->
+                <div id="sandbox-arena" class="relative flex-1 bg-slate-950 rounded-xl border border-slate-800/80 overflow-hidden flex items-center justify-center">
+                    
+                    <!-- Grid background effect -->
+                    <div class="absolute inset-0 bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+
+                    <!-- Player Avatar -->
+                    <div id="player-avatar" class="absolute transition-all duration-300 flex flex-col items-center cursor-pointer select-none" style="left: 50%; top: 50%; transform: translate(-50%, -50%);">
+                        <div id="player-shield-ring" class="absolute -inset-3 rounded-full border-2 border-yellow-400/0 transition-all duration-300 pointer-events-none scale-125"></div>
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center shadow-xl shadow-purple-600/40 floating border-2 border-purple-400/50">
+                            <i id="player-icon" class="fa-solid fa-user-astronaut text-2xl text-white"></i>
+                        </div>
+                        <span class="mt-1.5 text-[10px] font-bold bg-slate-900/90 text-purple-300 px-2 py-0.5 rounded-full border border-purple-500/30 shadow">Héros Sandbox</span>
+                    </div>
+
+                    <!-- Dynamic Entity Spawner Container -->
+                    <div id="entities-container" class="absolute inset-0 pointer-events-none"></div>
+
+                    <!-- Floating floating text notifications -->
+                    <div id="float-texts" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
+
+                    <div class="absolute bottom-3 left-3 text-[11px] text-slate-500 bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-800">
+                        Astuce : Cliquez n'importe où dans l'arène pour déplacer votre avatar !
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar: Live Logs & Simulation Activity -->
+        <div class="lg:col-span-1 flex flex-col gap-4">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col h-[520px]">
+                <h2 class="text-sm font-bold tracking-wider text-purple-400 uppercase mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-terminal"></i> Journal de Simulation
+                </h2>
+                
+                <div id="log-container" class="flex-1 bg-slate-950 rounded-xl p-3 font-mono text-[11px] text-slate-300 overflow-y-auto flex flex-col gap-1.5 border border-slate-800/80">
+                    <div class="text-purple-400">[Système] Initialisation du Sandbox OK. 5 Boosts prêts.</div>
+                </div>
+
+                <div class="mt-3 pt-3 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400">
+                    <span>Événements enregistrés</span>
+                    <button onclick="clearLogs()" class="text-slate-500 hover:text-slate-300 transition-colors">Effacer</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // State variables
+        let stats = {
+            hpMax: 100,
+            hp: 100,
+            manaMax: 100,
+            mana: 100,
+            speed: 1.0,
+            damage: 25,
+            shieldMax: 50,
+            shield: 0
+        };
+
+        let boostsCount = {
+            health: 0,
+            mana: 0,
+            speed: 0,
+            damage: 0,
+            shield: 0
+        };
+
+        let playerPos = { x: 50, y: 50 }; // percentages
+
+        // Logger function
+        function addLog(message, type = 'info') {
+            const container = document.getElementById('log-container');
+            const time = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            
+            let color = 'text-slate-300';
+            if (type === 'health') color = 'text-red-400';
+            if (type === 'mana') color = 'text-blue-400';
+            if (type === 'speed') color = 'text-cyan-400';
+            if (type === 'damage') color = 'text-orange-400';
+            if (type === 'shield') color = 'text-yellow-400';
+            if (type === 'success') color = 'text-emerald-400';
+            if (type === 'danger') color = 'text-rose-500 font-bold';
+
+            div.className = `${color} leading-tight`;
+            div.innerHTML = `<span class="text-slate-600">[${time}]</span> ${message}`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Floating popup texts in arena
+        function showFloatingText(text, colorClass = 'text-white') {
+            const container = document.getElementById('float-texts');
+            const el = document.createElement('div');
+            el.className = `absolute font-extrabold text-sm ${colorClass} pointer-events-none transition-all duration-1000 transform -translate-x-1/2 -translate-y-1/2`;
+            el.style.left = `${playerPos.x}%`;
+            el.style.top = `${playerPos.y - 10}%`;
+            el.innerText = text;
+            container.appendChild(el);
+
+            setTimeout(() => {
+                el.style.transform = 'translate(-50%, -60px) scale(1.2)';
+                el.style.opacity = '0';
+            }, 50);
+
+            setTimeout(() => {
+                el.remove();
+            }, 1000);
+        }
+
+        // Update UI bars and values
+        function updateUI() {
+            document.getElementById('stat-hp').innerText = `${Math.round(stats.hp)}/${stats.hpMax}`;
+            document.getElementById('bar-hp').style.width = `${Math.min(100, (stats.hp / stats.hpMax) * 100)}%`;
+
+            document.getElementById('stat-mana').innerText = `${Math.round(stats.mana)}/${stats.manaMax}`;
+            document.getElementById('bar-mana').style.width = `${Math.min(100, (stats.mana / stats.manaMax) * 100)}%`;
+
+            document.getElementById('stat-speed').innerText = `${stats.speed.toFixed(1)}x`;
+            document.getElementById('bar-speed').style.width = `${Math.min(100, (stats.speed / 3.0) * 100)}%`;
+
+            document.getElementById('stat-dmg').innerText = `${stats.damage}`;
+            document.getElementById('bar-dmg').style.width = `${Math.min(100, (stats.damage / 125) * 100)}%`;
+
+            document.getElementById('stat-shield').innerText = `${stats.shield}/${stats.shieldMax}`;
+            document.getElementById('bar-shield').style.width = `${Math.min(100, (stats.shield / stats.shieldMax) * 100)}%`;
+
+            // Update counts in buttons
+            for (let key in boostsCount) {
+                document.getElementById(`count-${key}`).innerText = boostsCount[key];
+            }
+
+            // Shield visual ring
+            const shieldRing = document.getElementById('player-shield-ring');
+            if (stats.shield > 0) {
+                shieldRing.style.borderColor = 'rgba(234, 179, 8, 0.6)';
+                shieldRing.style.boxShadow = '0 0 15px rgba(234, 179, 8, 0.4)';
+            } else {
+                shieldRing.style.borderColor = 'transparent';
+                shieldRing.style.boxShadow = 'none';
+            }
+
+            checkSynergies();
+        }
+
+        // Activate specific boost
+        function activateBoost(type) {
+            boostsCount[type]++;
+            
+            if (type === 'health') {
+                stats.hpMax += 50;
+                stats.hp = stats.hpMax;
+                showFloatingText('+50 PV & Soin', 'text-red-400 glow-red');
+                addLog('Health Boost activé : Santé maximale augmentée et restaurée.', 'health');
+            } else if (type === 'mana') {
+                stats.manaMax += 25;
+                stats.mana = stats.manaMax;
+                showFloatingText('+25 Mana', 'text-blue-400 glow-blue');
+                addLog('Mana Boost activé : Réserve magique augmentée.', 'mana');
+            } else if (type === 'speed') {
+                stats.speed = parseFloat((stats.speed + 0.5).toFixed(1));
+                showFloatingText(`Vitesse ${stats.speed}x`, 'text-cyan-400 glow-cyan');
+                addLog(`Speed Boost activé : Vitesse portée à ${stats.speed}x.`, 'speed');
+            } else if (type === 'damage') {
+                stats.damage += 20;
+                showFloatingText(`Dégâts ${stats.damage}`, 'text-orange-400 glow-orange');
+                addLog(`Damage Boost activé : Dégâts portés à ${stats.damage}.`, 'damage');
+            } else if (type === 'shield') {
+                stats.shieldMax += 50;
+                stats.shield = stats.shieldMax;
+                showFloatingText('+50 Bouclier', 'text-yellow-400 glow-yellow');
+                addLog('Shield Boost activé : Barrière d\'énergie déployée.', 'shield');
+            }
+
+            updateUI();
+        }
+
+        // Check active combinations / synergies
+        function checkSynergies() {
+            const display = document.getElementById('combo-display');
+            let comboText = "Aucun combo spécial actif. Cumulez vitesse, dégâts et bouclier pour déclencher une synergie divine !";
+            
+            if (boostsCount.speed >= 2 && boostsCount.damage >= 2) {
+                comboText = "⚡ 🔥 SYNERGIE 'FUREUR ÉLECTRIQUE' : Attaques fulgurantes doublées ! Vitesse d'action maximale.";
+            } else if (boostsCount.health >= 1 && boostsCount.shield >= 1) {
+                comboText = "🛡️ ❤️ SYNERGIE 'JUGGERNAUT' : Régénération passive et résistance blindée activées.";
+            } else if (boostsCount.mana >= 2 && boostsCount.damage >= 2) {
+                comboText = "🔮 ⚔️ SYNERGIE 'LAME ARCANE' : Vos attaques infligent des dégâts magiques élémentaires bonus !";
+            } else if (boostsCount.health >= 1 && boostsCount.mana >= 1 && boostsCount.speed >= 1 && boostsCount.damage >= 1 && boostsCount.shield >= 1) {
+                comboText = "🌟 GOD MODE ACTIF : Tous les boosts sont combinés ! Puissance ultime atteinte.";
+            }
+            
+            display.innerText = comboText;
+        }
+
+        // Spawn a random boost collectible in the arena
+        function spawnRandomBoost() {
+            const types = ['health', 'mana', 'speed', 'damage', 'shield'];
+            const randomType = types[Math.floor(Math.random() * types.length)];
+            
+            const container = document.getElementById('entities-container');
+            const item = document.createElement('div');
+            
+            const posX = Math.random() * 80 + 10; // percentages
+            const posY = Math.random() * 80 + 10;
+
+            let icon = 'fa-heart text-red-400';
+            if (randomType === 'mana') icon = 'fa-moon text-blue-400';
+            if (randomType === 'speed') icon = 'fa-bolt text-cyan-400';
+            if (randomType === 'damage') icon = 'fa-sword text-orange-400';
+            if (randomType === 'shield') icon = 'fa-shield text-yellow-400';
+
+            item.className = 'absolute pointer-events-auto cursor-pointer p-2.5 rounded-xl bg-slate-900 border border-slate-700 shadow-lg floating hover:scale-125 transition-transform flex items-center justify-center';
+            item.style.left = `${posX}%`;
+            item.style.top = `${posY}%`;
+            item.innerHTML = `<i class="fa-solid ${icon} text-lg"></i>`;
+
+            item.onclick = (e) => {
+                e.stopPropagation();
+                activateBoost(randomType);
+                item.remove();
+                addLog(`Boost ramassé dans l'arène : ${randomType.toUpperCase()} !`, 'success');
+            };
+
+            container.appendChild(item);
+            addLog(`Un objet [${randomType.toUpperCase()}] est apparu dans l'arène. Cliquez dessus pour le collecter !`);
+        }
+
+        // Spawn target/enemy in sandbox
+        function spawnEnemy() {
+            const container = document.getElementById('entities-container');
+            const enemy = document.createElement('div');
+            
+            const posX = Math.random() * 70 + 15;
+            const posY = Math.random() * 70 + 15;
+            let enemyHP = 50;
+
+            enemy.className = 'absolute pointer-events-auto cursor-pointer p-3 rounded-2xl bg-rose-950/80 border border-rose-500/50 shadow-xl flex flex-col items-center hover:bg-rose-900 transition-colors';
+            enemy.style.left = `${posX}%`;
+            enemy.style.top = `${posY}%`;
+            
+            enemy.innerHTML = `
+                <i class="fa-solid fa-skull text-rose-400 text-xl mb-1"></i>
+                <div class="w-12 bg-slate-900 rounded-full h-1.5 overflow-hidden">
+                    <div class="bg-rose-500 h-full enemy-hp-bar" style="width: 100%"></div>
+                </div>
+            `;
+
+            enemy.onclick = (e) => {
+                e.stopPropagation();
+                enemyHP -= stats.damage;
+                
+                showFloatingText(`-${stats.damage}`, 'text-orange-400');
+                
+                const bar = enemy.querySelector('.enemy-hp-bar');
+                if (enemyHP <= 0) {
+                    enemy.remove();
+                    addLog(`Cible ennemie éliminée avec ${stats.damage} dégâts !`, 'success');
+                    showFloatingText('ÉLIMINÉ !', 'text-emerald-400');
+                } else {
+                    bar.style.width = `${Math.max(0, (enemyHP / 50) * 100)}%`;
+                    addLog(`Cible touchée ! PV restants : ${enemyHP}/50`);
+                }
+            };
+
+            container.appendChild(enemy);
+            addLog('Nouvelle cible invoquée dans l’arène. Cliquez dessus pour tester vos dégâts !', 'danger');
+        }
+
+        // Special super attack based on mana
+        function triggerSuperAttack() {
+            if (stats.mana < 30) {
+                addLog('Mana insuffisant pour déclencher l’explosion magique !', 'danger');
+                showFloatingText('Mana Insuffisant !', 'text-blue-400');
+                return;
+            }
+
+            stats.mana -= 30;
+            showFloatingText('✨ EXPLOSION ARCANE ✨', 'text-purple-300 glow-blue');
+            addLog('💥 Explosion Arcanique déclenchée ! Tous les ennemis proches subissent 100 dégâts.', 'success');
+            
+            // Clear all enemies in container
+            const container = document.getElementById('entities-container');
+            const enemies = container.querySelectorAll('.bg-rose-950\\/80');
+            enemies.forEach(e => {
+                e.style.transform = 'scale(1.5)';
+                e.style.opacity = '0';
+                setTimeout(() => e.remove(), 300);
+            });
+
+            updateUI();
+        }
+
+        // Arena click to move player avatar
+        document.getElementById('sandbox-arena').onclick = (e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+            playerPos = { x, y };
+            const avatar = document.getElementById('player-avatar');
+            avatar.style.left = `${x}%`;
+            avatar.style.top = `${y}%`;
+        };
+
+        // Reset simulation sandbox
+        function resetSandbox() {
+            stats = { hpMax: 100, hp: 100, manaMax: 100, mana: 100, speed: 1.0, damage: 25, shieldMax: 50, shield: 0 };
+            boostsCount = { health: 0, mana: 0, speed: 0, damage: 0, shield: 0 };
+            playerPos = { x: 50, y: 50 };
+            
+            const avatar = document.getElementById('player-avatar');
+            avatar.style.left = '50%';
+            avatar.style.top = '50%';
+
+            document.getElementById('entities-container').innerHTML = '';
+            document.getElementById('log-container').innerHTML = '<div class="text-purple-400">[Système] Sandbox réinitialisé avec succès.</div>';
+            
+            updateUI();
+        }
+
+        // Background mana regeneration loop
+        setInterval(() => {
+            if (stats.mana < stats.manaMax) {
+                const regenRate = 1 + (boostsCount.mana * 1.5);
+                stats.mana = Math.min(stats.manaMax, stats.mana + regenRate);
+                updateUI();
+            }
+        }, 1000);
+
+        // Initial UI load
+        window.onload = () => {
+            updateUI();
+            addLog('Prêt ! Essayez d’invoquer des cibles et de collecter des boosts.');
+        };
+    </script>
+</body>
+</html>
